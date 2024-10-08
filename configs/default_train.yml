@@ -1,0 +1,25 @@
+data_dir: /data-net/storage/datasets/
+
+# Train
+batch_size: 1
+max_pages: 4
+gradient_accumulation_steps: 100
+n_iterations: 10000
+save_every: 100
+
+# Optimizer and Scheduler
+lr: 0.0002
+scheduler_name: linear
+warmup_ratio: 0.1
+
+# Saving
+only_keep_best: true
+save_dir: save
+project_name: Multi-Page
+
+# Multi-GPU
+num_nodes: 1
+node_id: 0
+num_gpus: 4
+
+

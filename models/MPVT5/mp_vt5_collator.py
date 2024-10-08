@@ -154,6 +154,7 @@ class mp_vt5_collator:
         #visual_attention_mask = (images[:, :, :, 2] != 0).to(torch.long)
         attention_mask = (input_ids != self.tokenizer.pad_token_id).to(torch.long)
         #attention_mask = torch.cat([attention_mask[:, :, :-self.n_page_tokens], visual_attention_mask, attention_mask[:, :, -self.n_page_tokens:]], dim=-1)
+        attention_mask = attention_mask.view(-1, attention_mask.size(-1))
         
         labels = self.tokenizer(batch['label'], padding='longest', return_tensors='pt', add_special_tokens=True, truncation=True)
 

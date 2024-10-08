@@ -149,8 +149,10 @@ class MP_VT5Stack(T5Stack):
         return_dict=None,
     ):
         inputs_embeds = self.embed_tokens(input_ids, boxes, images)
-        if attention_mask is not None:
-            attention_mask = attention_mask.view(-1, attention_mask.size(-1))
+        
+        # Mask is already 2D
+        # if attention_mask is not None:
+        #     attention_mask = attention_mask.view(-1, attention_mask.size(-1))
 
         outputs = super().forward(
             inputs_embeds=inputs_embeds,
@@ -418,32 +420,32 @@ class MPVT5(T5ForConditionalGeneration):
 
         return outputs
     
-    def _sample(self,
-        input_ids: torch.LongTensor,
-        logits_processor: LogitsProcessorList,
-        stopping_criteria: StoppingCriteriaList,
-        generation_config: GenerationConfig,
-        synced_gpus: bool,
-        streamer: Optional["BaseStreamer"],
-        logits_warper: Optional[LogitsProcessorList] = None,
-        **model_kwargs,
-    ) -> Union[GenerateNonBeamOutput, torch.LongTensor]:
-        return self._greedy_search(
-            input_ids,
-            logits_processor=logits_processor,
-            stopping_criteria=stopping_criteria,
-            max_length=generation_config.max_length,
-            pad_token_id=generation_config.pad_token_id,
-            eos_token_id=generation_config.eos_token_id,
-            output_attentions=generation_config.output_attentions,
-            output_hidden_states=generation_config.output_hidden_states,
-            output_scores=generation_config.output_scores,
-            output_logits=generation_config.output_logits,
-            return_dict_in_generate=generation_config.return_dict_in_generate,
-            synced_gpus=synced_gpus,
-            streamer=streamer,
-            **model_kwargs,
-        )
+    # def _sample(self,
+    #     input_ids: torch.LongTensor,
+    #     logits_processor: LogitsProcessorList,
+    #     stopping_criteria: StoppingCriteriaList,
+    #     generation_config: GenerationConfig,
+    #     synced_gpus: bool,
+    #     streamer: Optional["BaseStreamer"],
+    #     logits_warper: Optional[LogitsProcessorList] = None,
+    #     **model_kwargs,
+    # ) -> Union[GenerateNonBeamOutput, torch.LongTensor]:
+    #     return self._greedy_search(
+    #         input_ids,
+    #         logits_processor=logits_processor,
+    #         stopping_criteria=stopping_criteria,
+    #         max_length=generation_config.max_length,
+    #         pad_token_id=generation_config.pad_token_id,
+    #         eos_token_id=generation_config.eos_token_id,
+    #         output_attentions=generation_config.output_attentions,
+    #         output_hidden_states=generation_config.output_hidden_states,
+    #         output_scores=generation_config.output_scores,
+    #         output_logits=generation_config.output_logits,
+    #         return_dict_in_generate=generation_config.return_dict_in_generate,
+    #         synced_gpus=synced_gpus,
+    #         streamer=streamer,
+    #         **model_kwargs,
+    #     )
 
     def _greedy_search(
         self,

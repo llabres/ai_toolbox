@@ -56,9 +56,9 @@ def format_data(sample, max_pages, use_images, use_ocr, gt_answers):
     
 
 def build_mp_docvqa(data_dir, split, config):
-    data_files = {"train": "train-*.parquet", "val": "val-*.parquet", "test": "test-*.parquet"}
+    data_files = {"train": "train-*.parquet", "val": "val-00000*.parquet", "test": "test-*.parquet"}
     dataset = load_dataset(os.path.join(data_dir, 'data'), data_files=data_files, split=split, streaming=True)
-    remove_columns = ['question_id','image_id', 'pages', 'imdb_doc_pages', 'total_doc_pages', 'ocr_normalized_boxes', 'extra_info', 'answers', 'answer_page', 'data_split']
+    remove_columns = ['question_id','image_id', 'pages', 'imdb_doc_pages', 'total_doc_pages', 'ocr_normalized_boxes', 'extra_info', 'answers', 'answer_page']
     remove_columns += ['images'] if not config['use_images'] else []
     remove_columns += ['ocr_tokens'] if not config['use_ocr'] else []
     dataset = dataset.map(format_data, fn_kwargs={'max_pages': config['max_pages'], 'use_images': config['use_images'], 'use_ocr': config['use_ocr'], 'gt_answers': config['gt_answers']}, remove_columns=remove_columns)

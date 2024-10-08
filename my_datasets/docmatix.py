@@ -26,3 +26,5 @@ def build_docmatix(data_dir, split, config):
         dataset = dataset.filter(filter_data_ocr)
     
     dataset = dataset.map(format_data, remove_columns=['texts'])
+
+    return dataset

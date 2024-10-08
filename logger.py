@@ -2,7 +2,7 @@ import socket
 
 class Logger:
     def __init__(self, config):
-        self.use_wandb = config['use_wandb']
+        self.use_wandb = config['wandb']
         self.best_metrics = None
 
         machine = socket.gethostname()
@@ -29,7 +29,7 @@ class Logger:
             self.best_metrics = metrics
             return True
 
-        if metrics['ANLS'] > self.best_metrics['ANLS']:
+        if metrics['ANLS'] >= self.best_metrics['ANLS']:
             self.best_metrics = metrics
             return True
 

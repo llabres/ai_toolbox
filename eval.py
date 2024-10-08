@@ -3,6 +3,12 @@ import editdistance
 
 from tqdm import tqdm
 
+from utils import parse_args, load_config, build_model, build_dataset, build_logger
+
+from transformers import GenerationConfig, StoppingCriteriaList, MaxLengthCriteria, EosTokenCriteria
+
+import torch.distributed as dist
+
 def get_metrics(gt_labels, pred_labels):
     batch_accuracy = []
     batch_anls = []
@@ -50,8 +56,9 @@ def evaluate(config, model, eval_data_loader, logger):
             batch.pop('labels')
             batch.pop('decoder_attention_mask')
             gt_answers = batch.pop('gt_answers')
+            gt_answer_page = batch.pop('gt_answer_page') if 'gt_answer_page' in batch.keys() else None
             batch = {k: v.to(config['device']) for k, v in batch.items() if v is not None}
-            outputs = model.generate(**batch, output_scores=True, output_attentions=False, max_new_tokens=50, return_dict_in_generate=True)
+            outputs = model.generate(**batch, output_scores=True, output_attentions=False, return_dict_in_generate=True, max_new_tokens=20)
 
             preds = model.tokenizer.batch_decode(outputs['sequences'], skip_special_tokens=True)
 
@@ -64,10 +71,68 @@ def evaluate(config, model, eval_data_loader, logger):
     
     total_metrics = {k: sum(v)/total_samples for k, v in metrics.items()}
 
-    if config['use_wandb']:
+    if config['wandb']:
         logger.wandb.log(total_metrics)
 
     return logger.update_best(total_metrics)
+
+def evaluate_parallel(config, model, eval_data_loader, logger, global_rank):
+    model.eval()
+    pbar = tqdm(eval_data_loader) if global_rank == 0 else eval_data_loader
+
+    total_samples = 0
+    metrics = {'Accuracy': [], 'ANLS': []}
+
+    with torch.no_grad():
+        for batch in pbar:
+            bs = batch['labels'].shape[0] 
+            batch.pop('labels')
+            batch.pop('decoder_attention_mask')
+            gt_answers = batch.pop('gt_answers')
+            gt_answer_page = batch.pop('gt_answer_page') if 'gt_answer_page' in batch.keys() else None
+            batch = {k: v.to(config['device']) for k, v in batch.items() if v is not None}
+            outputs = model.module.generate(**batch, output_scores=True, output_attentions=False, return_dict_in_generate=True, max_new_tokens=20)
+
+            preds = model.module.tokenizer.batch_decode(outputs['sequences'], skip_special_tokens=True)
+
+            batch_metrics = get_metrics(gt_answers, preds)
+            if global_rank == 0:
+                pbar.set_description(" - ".join([f"{k}: {sum(v)/bs:.4f}" for k, v in batch_metrics.items()]))
+            for k, v in batch_metrics.items():
+                metrics[k].extend(v)
+            
+            total_samples += bs
+
+    total_metrics = {k: sum(v)/total_samples for k, v in metrics.items()}
+
+    dist.barrier()
+    for k, v in total_metrics.items():
+        v = torch.tensor(v, device=config['device'])
+        dist.all_reduce(v, op=dist.ReduceOp.AVG)
+        total_metrics[k] = v.item()
+    
+    if config['wandb']:
+        logger.wandb.log(total_metrics)
+
+    return logger.update_best(total_metrics)
+
+
+if __name__ == '__main__':
+    args = parse_args()
+    config = load_config(args)
+
+    model = build_model(config)
+    model.to(config['device'])
+
+    logger = build_logger(config)
+    logger.log_model_parameters(model)
+
+    eval_dataset = build_dataset(config, 'val')
+
+    eval_data_loader = torch.utils.data.DataLoader(eval_dataset, batch_size=config['eval_batch_size'], collate_fn=model.collator, num_workers=2, pin_memory=True)
+
+    evaluate(config, model, eval_data_loader, logger)
+
         
 
 
