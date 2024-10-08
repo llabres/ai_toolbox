@@ -37,7 +37,7 @@ class MPPix2StructCollator:
             num_pages = len(batch['images'][batch_idx][:self.max_pages])
             
             try: # On Docmatix there have been problems when processing the image
-                patches = self.image_processor(batch['images'][batch_idx][:self.max_pages], text=batch['question'][batch_idx] if self.question_in_image else "", return_tensors='pt', max_patches=self.image_resolution)['flattened_patches']
+                patches = self.image_processor(batch['images'][batch_idx][:self.max_pages], text=batch['question'][batch_idx] if self.question_in_image else "", return_tensors='pt', max_patches=self.image_resolution, font_path="fonts/Arial.TTF")
                 if self.max_patches != self.image_resolution:
                     for page_idx in range(num_pages):                
                         pages_patches.append(process_patches(patches[page_idx], self.max_patches))
