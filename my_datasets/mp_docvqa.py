@@ -8,7 +8,7 @@ from datasets import load_dataset
 def format_data(sample, max_pages, use_images, use_ocr, gt_answers):
     idx = random.randint(0, len(sample['questions'])-1)
     answer_page = sample['questions'][idx]['answer_page_idx']
-    n_pages = sample['doc_pages']
+    n_pages = len(sample['images'])
 
     images = []
     ocr_tokens = []
