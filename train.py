@@ -46,7 +46,7 @@ def train(config):
     logger.log_model_parameters(model)
 
     train_dataset = build_dataset(config, 'train')
-    train_data_loader = DataLoader(train_dataset, batch_size=config['batch_size'], collate_fn=model.collator, num_workers=2, pin_memory=True)
+    train_data_loader = DataLoader(train_dataset, batch_size=config['batch_size'], collate_fn=model.collator, num_workers=0, pin_memory=True)
     config['iter_per_epoch'] = config['save_every']
 
     optimizer, lr_scheduler = build_optimizer(config, model)
@@ -54,7 +54,7 @@ def train(config):
     is_best = True
     if config['eval']:
         eval_dataset = build_dataset(config, 'val')
-        eval_data_loader = DataLoader(eval_dataset, batch_size=config['eval_batch_size'], collate_fn=model.collator, num_workers=2, pin_memory=True)
+        eval_data_loader = DataLoader(eval_dataset, batch_size=config['eval_batch_size'], collate_fn=model.collator, num_workers=0, pin_memory=True)
         if config['eval_start']:
             model.set_pages(config['eval_max_pages'])
             is_best = evaluate(config, model, eval_data_loader, logger)

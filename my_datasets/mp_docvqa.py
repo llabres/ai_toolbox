@@ -8,6 +8,7 @@ from datasets import load_dataset
 def format_data(sample, max_pages, use_images, use_ocr, gt_answers):
     idx = random.randint(0, len(sample['questions'])-1)
     answer_page = sample['questions'][idx]['answer_page_idx']
+    answer_page = min(answer_page, len(sample['images'])-1)
     n_pages = len(sample['images'])
 
     images = []
@@ -28,7 +29,7 @@ def format_data(sample, max_pages, use_images, use_ocr, gt_answers):
             first_page = last_page-max_pages
 
     assert answer_page in range(first_page, last_page)
-    
+
     if use_images:
         for page in range(first_page, last_page):
             images.append(Image.open(io.BytesIO(sample['images'][page])))
