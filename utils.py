@@ -129,6 +129,10 @@ def build_model(config):
     return model
 
 def build_dataset(config, split):
+    if split != 'train':
+        max_pages = config['max_pages']
+        config['max_pages'] = config.get('eval_max_pages', max_pages)
+
     if config['dataset'] == 'MP-DocVQA':
         from my_datasets.mp_docvqa import build_mp_docvqa
         data_dir = os.path.join(config['data_dir'], 'MP-DocVQA')
@@ -149,6 +153,9 @@ def build_dataset(config, split):
 
     if 'dataset_checkpoint' in config.keys():
         dataset.load_state_dict(torch.load(config['dataset_checkpoint']))
+
+    if split != 'train':
+        config['max_pages'] = max_pages
     
     return dataset
 
