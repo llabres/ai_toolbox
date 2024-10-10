@@ -103,11 +103,10 @@ def evaluate_parallel(config, model, eval_data_loader, logger, global_rank):
             
             total_samples += bs
 
-    total_metrics = {k: sum(v)/total_samples for k, v in metrics.items()}
-
+    total_metrics = {k: torch.tensor(sum(v)/total_samples, device=config['device']) for k, v in metrics.items()}
+    
     dist.barrier()
     for k, v in total_metrics.items():
-        v = torch.tensor(v, device=config['device'])
         dist.all_reduce(v, op=dist.ReduceOp.AVG)
         total_metrics[k] = v.item()
     
