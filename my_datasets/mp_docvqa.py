@@ -6,8 +6,9 @@ from datasets import load_dataset
 
 
 def format_data(sample, max_pages, use_images, use_ocr, gt_answers):
-    answer_page = sample['answer_page_idx']
-    n_pages = sample['imdb_doc_pages']
+    idx = random.randint(0, len(sample['questions'])-1)
+    answer_page = sample['questions'][idx]['answer_page_idx']
+    n_pages = sample['doc_pages']
 
     images = []
     ocr_tokens = []
@@ -37,19 +38,19 @@ def format_data(sample, max_pages, use_images, use_ocr, gt_answers):
     if use_ocr:
         for page in range(first_page, last_page):
             ocr_tokens.append(sample['ocr_tokens'][page])
-            ocr_boxes.append(sample['ocr_normalized_boxes'][page])
+            ocr_boxes.append(sample['ocr_boxes'][page])
         
         sample['ocr_tokens'] = ocr_tokens
         sample['ocr_boxes'] = ocr_boxes
                     
-
-    sample['label'] = random.choice(sample['answers'])
+    sample['question'] = sample['questions'][idx]['question']
+    sample['label'] = random.choice(sample['questions'][idx]['answers'])
 
 
     sample['answer_page_idx'] = answer_page-first_page
     
     if gt_answers:
-        sample['gt_answers'] = sample['answers']
+        sample['gt_answers'] = sample['questions'][idx]['answers']
         sample['gt_answer_page'] = answer_page-first_page
 
     return sample
@@ -58,9 +59,9 @@ def format_data(sample, max_pages, use_images, use_ocr, gt_answers):
 def build_mp_docvqa(data_dir, split, config):
     data_files = {"train": "train-*.parquet", "val": "val-*.parquet", "test": "test-*.parquet"}
     dataset = load_dataset(os.path.join(data_dir, 'data'), data_files=data_files, split=split, streaming=True)
-    remove_columns = ['question_id','image_id', 'pages', 'imdb_doc_pages', 'total_doc_pages', 'ocr_normalized_boxes', 'extra_info', 'answers', 'answer_page']
+    remove_columns = ['questions', 'doc_pages', 'images_id']
     remove_columns += ['images'] if not config['use_images'] else []
-    remove_columns += ['ocr_tokens'] if not config['use_ocr'] else []
+    remove_columns += ['ocr_tokens', 'ocr_boxes'] if not config['use_ocr'] else []
     dataset = dataset.map(format_data, fn_kwargs={'max_pages': config['max_pages'], 'use_images': config['use_images'], 'use_ocr': config['use_ocr'], 'gt_answers': config['gt_answers']}, remove_columns=remove_columns)
 
     return dataset

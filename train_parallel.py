@@ -103,5 +103,5 @@ if __name__ == '__main__':
     config = load_config(args)
 
     os.environ['MASTER_ADDR'] = 'localhost' 
-    os.environ['MASTER_PORT'] = '9955'
+    os.environ['MASTER_PORT'] = '9956'
     torch.multiprocessing.spawn(train, nprocs=config['num_gpus'], args=(config,))

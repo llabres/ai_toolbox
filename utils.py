@@ -92,6 +92,8 @@ def load_config(args):
     config['experiment_name'] = f"{config['model']}_{config['dataset']}_{datetime.datetime.now().strftime('%Y.%m.%d_%H.%M.%S')}"
     config['wandb_id'] = None
     config['current_epoch'] = 0
+
+    config['device'] = config.get('device', 'cuda')
     
     return config
 
