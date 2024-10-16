@@ -65,7 +65,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def load_config(args): 
+def load_config(args, eval_only=False): 
     if args.resume:
         config = yaml.safe_load(open(os.path.join(args.resume, 'config.yml'), "r"))
         config['model_checkpoint'] = os.path.join(args.resume, 'model.ckpt')
@@ -84,14 +84,16 @@ def load_config(args):
     config |= args
     config['use_images'] = True if config['model'] in ['MP-Pix2Struct', 'MP-Pix2Struct-base', 'MP-Pix2Struct-large'] else False
     config['use_ocr'] = True if config['model'] in ['MP-VT5', 'MP-VT5-base', 'MP-VT5-large'] else False
-    config['gradient_accumulation_steps'] = config.get('gradient_accumulation_steps', 1)
+    
+    if not eval_only:
+        config['gradient_accumulation_steps'] = config.get('gradient_accumulation_steps', 1)
+        config['n_epochs'] = config['n_epochs'] if 'n_epochs' in config else config['n_iterations']//config['save_every']
+        config['current_epoch'] = 0
 
     config['eval'] = True if 'eval_batch_size' in config.keys() else False
-    config['n_epochs'] = config['n_epochs'] if 'n_epochs' in config else config['n_iterations']//config['save_every']
-
     config['experiment_name'] = f"{config['model']}_{config['dataset']}_{datetime.datetime.now().strftime('%Y.%m.%d_%H.%M.%S')}"
     config['wandb_id'] = None
-    config['current_epoch'] = 0
+
 
     config['device'] = config.get('device', 'cuda')
     

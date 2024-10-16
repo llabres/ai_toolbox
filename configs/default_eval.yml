@@ -1,0 +1,10 @@
+data_dir: /data-net/storage/datasets/
+
+# Eval
+eval_batch_size: 2
+eval_max_pages: 20
+
+# Saving
+save_dir: save
+project_name: Multi-Page
+save_answers: true

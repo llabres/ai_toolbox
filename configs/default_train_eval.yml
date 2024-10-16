@@ -22,6 +22,7 @@ eval_start: false
 only_keep_best: true
 save_dir: save
 project_name: Multi-Page
+save_answers: false
 
 # Multi-GPU
 num_nodes: 1

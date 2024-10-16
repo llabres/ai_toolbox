@@ -68,11 +68,15 @@ def evaluate(config, model, eval_data_loader, logger):
                 metrics[k].extend(v)
             
             total_samples += bs
+
+            if config['save_answers']:
+                logger.save_answers(gt_answers, preds, config)
     
     total_metrics = {k: sum(v)/total_samples for k, v in metrics.items()}
 
     if config['wandb']:
         logger.wandb.log(total_metrics)
+    
 
     return logger.update_best(total_metrics)
 
@@ -118,9 +122,12 @@ def evaluate_parallel(config, model, eval_data_loader, logger, global_rank):
 
 if __name__ == '__main__':
     args = parse_args()
-    config = load_config(args)
+    config = load_config(args, eval_only=True)
+    
+    config['max_pages'] = config['eval_max_pages']
 
     model = build_model(config)
+    model.set_pages(config['eval_max_pages'])
     model.to(config['device'])
 
     logger = build_logger(config)
