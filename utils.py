@@ -77,6 +77,8 @@ def load_config(args, eval_only=False):
     
     config = yaml.safe_load(open(args.config_path, "r")) if args.config_path else {}
     config['model_checkpoint'] = os.path.join('models', args.model.replace('-', '').replace('base', '').replace('large', ''), f"{args.model.lower()}")
+    if 'Pix2Struct' in config['model_checkpoint']:
+        config['model_checkpoint'] = config['model_checkpoint'].replace('MPPix2Struct', 'MPPix2Structv2')
 
     args = vars(args)
     args = {k: v for k, v in args.items() if v is not None}
@@ -112,18 +114,18 @@ def build_model(config):
         model_config = T5Config.from_dict(model_config)
         model = MPVT5.from_pretrained(config['model_checkpoint'], config=model_config)
     
-    elif config['model'] == 'MP-Pix2Struct':
+    elif config['model'] in ['MP-Pix2Struct', 'MP-Pix2Struct-base', 'MP-Pix2Struct-large']:
         from transformers import Pix2StructConfig
-        from models.MPPix2Struct.mp_pix2struct import MPPix2Struct
+        from models.MPPix2Structv2.mp_pix2struct import MPPix2Struct
 
         model_config = Pix2StructConfig.from_pretrained(config['model_checkpoint'])
-        for key in config.keys():
-            if key in model_config:
-                model_config[key] = config[key]
-            if key in model_config['vision_config']:
-                model_config['vision_config'][key] = config[key]
+        # for key in config.to_dict().keys():
+        #     if key in model_config:
+        #         model_config[key] = config[key]
+        #     if key in model_config['vision_config']:
+        #         model_config['vision_config'][key] = config[key]
         
-        model_config = Pix2StructConfig.from_dict(model_config)
+        # model_config = Pix2StructConfig.from_dict(model_config)
         model = MPPix2Struct.from_pretrained(config['model_checkpoint'], config=model_config)
 
     else:
@@ -198,6 +200,8 @@ def save_checkpoint(config, model, dataset, optimizer, lr_scheduler, logger, epo
 
         model.save_pretrained(os.path.join(experiment_dir, f"model.ckpt" if config['only_keep_best'] else f"model_{epoch}.ckpt"))
         model.tokenizer.save_pretrained(os.path.join(experiment_dir, f"model.ckpt" if config['only_keep_best'] else f"model_{epoch}.ckpt"))
+        if 'processor' in model.__dict__.keys():
+            model.processor.save_pretrained(os.path.join(experiment_dir, f"model.ckpt" if config['only_keep_best'] else f"model_{epoch}.ckpt"))
         torch.save(optimizer.state_dict(), os.path.join(experiment_dir, "optimizer.ckpt"))
         torch.save(lr_scheduler.state_dict(), os.path.join(experiment_dir, "lr_scheduler.ckpt"))
         torch.save(dataset.state_dict(), os.path.join(experiment_dir, "dataset.ckpt"))

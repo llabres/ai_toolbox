@@ -56,18 +56,18 @@ def train(config):
         eval_dataset = build_dataset(config, 'val')
         eval_data_loader = DataLoader(eval_dataset, batch_size=config['eval_batch_size'], collate_fn=model.collator, num_workers=0, pin_memory=True)
         if config['eval_start']:
-            model.set_pages(config['eval_max_pages'])
+            model.set_eval_mode(max_pages=config['eval_max_pages'])
             is_best = evaluate(config, model, eval_data_loader, logger)
-            model.set_pages(config['max_pages'])
+            model.set_train_mode(max_pages=config['max_pages'])
     
     for epoch in range(config['current_epoch'], config['n_epochs']):
         
         train_one_epoch(config, model, train_data_loader, optimizer, lr_scheduler, logger, epoch)
         
         if config['eval']:
-            model.set_pages(config['eval_max_pages'])
+            model.set_eval_mode(max_pages=config['eval_max_pages'])
             is_best = evaluate(config, model, eval_data_loader, logger)
-            model.set_pages(config['max_pages'])
+            model.set_train_mode(max_pages=config['max_pages'])
 
         save_checkpoint(config, model, train_dataset, optimizer, lr_scheduler, logger, epoch, is_best)
 

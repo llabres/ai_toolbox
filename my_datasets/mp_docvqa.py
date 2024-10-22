@@ -32,9 +32,15 @@ def format_data(sample, max_pages, use_images, use_ocr, gt_answers):
 
     if use_images:
         for page in range(first_page, last_page):
-            images.append(Image.open(io.BytesIO(sample['images'][page])))
+            image = Image.open(io.BytesIO(sample['images'][page]))
+            image_size = image.size
+            scale = 1024 / max(image_size)
+            image_size = (int(image_size[0] * scale), int(image_size[1] * scale))
+            image = image.resize(image_size)
+            images.append(image)
+
         
-        sample['images'] = images
+        sample['images'] = [images]
 
     if use_ocr:
         for page in range(first_page, last_page):

@@ -78,9 +78,9 @@ def train(local_rank, config):
         eval_data_loader = DataLoader(eval_dataset, batch_size=config['eval_batch_size'], collate_fn=model.module.collator, num_workers=2, pin_memory=True)
         if config['eval_start']:
             dist.barrier()
-            model.module.set_pages(config['eval_max_pages'])
+            model.module.set_eval_mode(max_pages=config['eval_max_pages'])
             is_best = evaluate_parallel(config, model, eval_data_loader, logger, global_rank)
-            model.module.set_pages(config['max_pages'])
+            model.module.set_train_mode(max_pages=config['max_pages'])
     
     for epoch in range(config['current_epoch'], config['n_epochs']):
         
@@ -88,9 +88,9 @@ def train(local_rank, config):
         
         if config['eval']:
             dist.barrier()
-            model.module.set_pages(config['eval_max_pages'])
+            model.module.set_eval_mode(max_pages=config['eval_max_pages'])
             is_best = evaluate_parallel(config, model, eval_data_loader, logger, global_rank)
-            model.module.set_pages(config['max_pages'])
+            model.module.set_train_mode(max_pages=config['max_pages'])
 
         dist.barrier()
         if global_rank == 0:

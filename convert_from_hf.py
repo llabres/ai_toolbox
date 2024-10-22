@@ -101,8 +101,70 @@ def convert_pix2struct_to_mppix2struct(hf_path, mppix2struct_path):
     model.save_pretrained(mppix2struct_path)
     model.tokenizer.save_pretrained(mppix2struct_path)
 
+def convert_pix2struct_to_mppix2structv2(hf_path, mppix2struct_path):
+    from transformers import Pix2StructForConditionalGeneration, Pix2StructConfig, Pix2StructVisionConfig, T5Config
+
+    t5_config = T5Config.from_pretrained("google/t5-efficient-tiny")
+
+    pix2struct = Pix2StructForConditionalGeneration.from_pretrained(hf_path)
+    pix2struct_config = pix2struct.config
+    pix2struct_weights = pix2struct.state_dict()
+    del pix2struct
+
+    t5_config.d_model = pix2struct_config.vision_config.hidden_size
+    pix2struct_config.architectures = ["MPPix2Struct"]
+    pix2struct_config.model_type = "mp-pix2struct"
+
+    vision_config = pix2struct_config.vision_config
+    vision_config = vision_config.to_dict()
+    vision_config["global_layer_config"] = None
+    vision_config["patches_per_block"] = 1024
+    vision_config["num_global_tokens"] = 16
+    vision_config["num_memory_tokens"] = 256
+    vision_config["num_rows"] = 4096
+    vision_config["num_cols"] = 4096
+    vision_config["num_pages"] = 4096
+    vision_config["num_docs"] = 4096
+
+    pix2struct_config.vision_config = Pix2StructVisionConfig.from_dict(vision_config)
+    pix2struct_config = pix2struct_config.to_dict()
+    pix2struct_config["random_patch_removal"] = 0.05
+
+    pix2struct_config = Pix2StructConfig.from_dict(pix2struct_config)
+    pix2struct_config.vision_config.global_layer_config = t5_config
+    pix2struct_config.tie_word_embeddings = True
+    #pix2struct_config._name_or_path = mppix2struct_path
+
+    new_weights = pix2struct_weights.copy()
+    num_layer = 0
+    for key in pix2struct_weights.keys():
+        if key.startswith("encoder.encoder.layer."):
+            num_layer = int(key.split(".")[3])
+            new_num_layer = int(key.split(".")[3])*2 + 1
+            
+            new_weights[key.replace(f"encoder.encoder.layer.{num_layer}", f"encoder.encoder.layer.{new_num_layer}.local_layer")] = new_weights.pop(key)
+        if "row_embedder" in key:
+            new_weights.pop(key)
+        elif "column_embedder" in key:
+            new_weights.pop(key)
+        elif "patch_projection" in key:
+            new_weights[key.replace("patch_projection", "patch_embeddings")] = new_weights.pop(key)
+        
+
+    new_weights["encoder.embeddings.text_embeddings.weight"] = new_weights["decoder.lm_head.weight"]
+    from models.MPPix2Structv2.mp_pix2struct import MPPix2Struct
+
+    model = MPPix2Struct(pix2struct_config)
+    model.load_state_dict(new_weights, strict=False)
 
 
-convert_pix2struct_to_mppix2struct("google/pix2struct-docvqa-large", "models/MPPix2Struct/mp-pix2struct-large")
+    model.tokenizer.model_max_length = 1024
+    model.processor.image_processor.is_vqa = False
+
+    model.save_pretrained(mppix2struct_path)
+    model.tokenizer.save_pretrained(mppix2struct_path)
+    model.processor.save_pretrained(mppix2struct_path)
+
+convert_pix2struct_to_mppix2structv2("google/pix2struct-docvqa-base", "models/MPPix2Structv2/mp-pix2struct-base")
 
 
