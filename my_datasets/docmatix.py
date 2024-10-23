@@ -6,6 +6,7 @@ def format_data(sample):
     question_idx = random.randint(0, len(sample['texts']) - 1)
     sample['question'] = sample['texts'][question_idx]['user']
     sample['label'] = sample['texts'][question_idx]['assistant']
+    sample['images'] = [sample['images']]
 
     return sample
 

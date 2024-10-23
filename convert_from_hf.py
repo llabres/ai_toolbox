@@ -165,6 +165,6 @@ def convert_pix2struct_to_mppix2structv2(hf_path, mppix2struct_path):
     model.tokenizer.save_pretrained(mppix2struct_path)
     model.processor.save_pretrained(mppix2struct_path)
 
-convert_pix2struct_to_mppix2structv2("google/pix2struct-docvqa-base", "models/MPPix2Structv2/mp-pix2struct-base")
+convert_pix2struct_to_mppix2structv2("google/pix2struct-docvqa-large", "models/MPPix2Structv2/mp-pix2struct-large")
 
 

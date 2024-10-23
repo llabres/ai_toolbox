@@ -3,9 +3,9 @@ data_dir: /data-net/storage/datasets/
 # Train
 batch_size: 2
 max_pages: 2
-gradient_accumulation_steps: 100
-n_iterations: 1000
-save_every: 100
+gradient_accumulation_steps: 10
+n_iterations: 10000
+save_every: 1000
 
 # Optimizer and Scheduler
 lr: 0.0002
@@ -21,7 +21,7 @@ eval_start: false
 # Saving
 only_keep_best: true
 save_dir: save
-project_name: Multi-Page
+project_name: CVPR
 save_answers: false
 
 # Multi-GPU

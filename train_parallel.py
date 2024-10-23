@@ -57,7 +57,7 @@ def train(local_rank, config):
 
     model = build_model(config)
     model.to(config['device'])
-    model = nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], find_unused_parameters=True)
+    model = nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], find_unused_parameters=True, gradient_as_bucket_view=True)
 
     logger = build_logger(config)
     logger.log_model_parameters(model)
