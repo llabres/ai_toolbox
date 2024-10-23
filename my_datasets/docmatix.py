@@ -6,7 +6,14 @@ def format_data(sample):
     question_idx = random.randint(0, len(sample['texts']) - 1)
     sample['question'] = sample['texts'][question_idx]['user']
     sample['label'] = sample['texts'][question_idx]['assistant']
-    sample['images'] = [sample['images']]
+    images = []
+    for image in sample['images']:
+        image_size = image.size
+        scale = 1024 / max(image_size)
+        image_size = (int(image_size[0] * scale), int(image_size[1] * scale))
+        image = image.resize(image_size)
+        images.append(image)
+    sample['images'] = [images]
 
     return sample
 
