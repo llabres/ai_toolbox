@@ -11,20 +11,11 @@ class Logger:
         if not machine.startswith('cvc') and not machine.startswith('cuda'):
             machine = 'marenostrum5'
 
-        if self.use_wandb:
-            import wandb as wb
-            tags = [config['model'], config['dataset'], machine]
-            self.wandb = wb.init(project=config['project_name'], name=config['experiment_name'], dir=config['save_dir'], tags=tags, config=config, id=config['wandb_id'], resume="allow")
+        self.machine = machine
     
     def log_model_parameters(self, model):
-        total_params = sum(p.numel() for p in model.parameters())
-        trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-        if self.use_wandb:
-            self.wandb.config.update({
-                'Model Params': int(total_params / 1e6),  # In millions
-                'Model Trainable Params': int(trainable_params / 1e6)  # In millions
-            })
+        self.total_params = sum(p.numel() for p in model.parameters())
+        self.trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     def update_best(self, metrics):
         if not self.best_metrics:

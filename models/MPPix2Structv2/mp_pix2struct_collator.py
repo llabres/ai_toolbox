@@ -76,15 +76,19 @@ class MPPix2StructCollator:
         decoder_attention_mask = labels.attention_mask
         labels = labels.input_ids
 
-        return {
-            'question_input_ids': question_ids,
-            'global_attention_mask': global_attention_mask,
-            'attention_mask': attention_mask,
-            'flattened_patches': batch_patches,
-            'decoder_attention_mask': decoder_attention_mask,
-            'labels': labels,
-            'gt_answers': batch.get('gt_answers', None),
-        }
+        collated_batch = dict(
+            question_input_ids=question_ids,
+            global_attention_mask=global_attention_mask,
+            attention_mask=attention_mask,
+            flattened_patches=batch_patches,
+            decoder_attention_mask=decoder_attention_mask,
+            labels=labels,
+        )
+
+        if 'gt_answers' in batch.keys():
+            collated_batch['gt_answers'] = batch['gt_answers']
+
+        return collated_batch
 
 
 

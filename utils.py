@@ -37,11 +37,6 @@ def parse_args():
     # wandb
     parser.add_argument('--project-name', type=str, help='Name of the project in wandb.')
     parser.add_argument('--wandb', action='store_true', help='Whether to enable wandb logging.', default=False)
-    
-    # multi-gpu (only used in train_parallel.py)
-    parser.add_argument('--num-nodes', type=int, help='Number of available nodes/hosts')
-    parser.add_argument('--node-id', type=int, help='Unique ID to identify the current node/host')
-    parser.add_argument('--num-gpus', type=int, help='Number of GPUs in each node')
 
     # Resume previous experiment, if used, every other argument is ignored
     parser.add_argument('--resume', type=str, help='Path to Experiment Checkpoint', default=None)
@@ -87,12 +82,15 @@ def load_config(args, eval_only=False):
     config['use_images'] = True if config['model'] in ['MP-Pix2Struct', 'MP-Pix2Struct-base', 'MP-Pix2Struct-large'] else False
     config['use_ocr'] = True if config['model'] in ['MP-VT5', 'MP-VT5-base', 'MP-VT5-large'] else False
     
+    config['mixed_precision'] = config.get('mixed_precision', False)
+
     if not eval_only:
         config['gradient_accumulation_steps'] = config.get('gradient_accumulation_steps', 1)
         config['n_epochs'] = config['n_epochs'] if 'n_epochs' in config else config['n_iterations']//config['save_every']
         config['current_epoch'] = 0
 
     config['eval'] = True if 'eval_batch_size' in config.keys() else False
+    config['debug'] = config.get('debug', False)
     config['experiment_name'] = f"{config['model']}_{config['dataset']}_{datetime.datetime.now().strftime('%Y.%m.%d_%H.%M.%S')}"
     config['wandb_id'] = None
 
@@ -165,10 +163,10 @@ def build_dataset(config, split):
 
 def build_optimizer(config, model):
     optimizer = torch.optim.AdamW(model.parameters(), lr=float(config['lr']))
-    n_training_steps = config['n_epochs'] * config['iter_per_epoch']
+    n_training_steps = config['n_epochs'] * config['iter_per_epoch'] * config['gradient_accumulation_steps']
 
     if 'warmup_steps' in config.keys():
-        num_warmup_steps = config['warmup_steps']
+        num_warmup_steps = config['warmup_steps'] * config['gradient_accumulation_steps']
     elif 'warmup_ratio' in config.keys():
         num_warmup_steps = int(config['warmup_ratio'] * n_training_steps)
     else:
@@ -188,13 +186,13 @@ def build_logger(config):
     from logger import Logger
     return Logger(config)
         
-def save_checkpoint(config, model, dataset, optimizer, lr_scheduler, logger, epoch, is_best):
+def save_checkpoint(config, model, dataset, optimizer, lr_scheduler, logger, epoch, is_best, wandb_id):
     if is_best or not config['only_keep_best']:
         experiment_dir = os.path.join(config['save_dir'], 'checkpoints', config['experiment_name'])
         os.makedirs(experiment_dir, exist_ok=True)
         
         config['current_epoch'] = epoch + 1
-        config['wandb_id'] = logger.wandb.id if logger.use_wandb else None
+        config['wandb_id'] = wandb_id
         device = config.pop('device')
         save_yaml(os.path.join(experiment_dir, 'config.yml'), config)
 
