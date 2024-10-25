@@ -92,7 +92,8 @@ def train(config, accelerator):
         accelerator.wait_for_everyone()
         if accelerator.is_local_main_process:
             wandb_tracker = accelerator.get_tracker("wandb")
-            save_checkpoint(config, accelerator.unwrap_model(model), train_dataset, optimizer, lr_scheduler, logger, epoch, is_best, wandb_id=wandb_tracker.run.id)
+            run_id = wandb_tracker.run.id if config['wandb'] else None
+            save_checkpoint(config, accelerator.unwrap_model(model), train_dataset, optimizer, lr_scheduler, logger, epoch, is_best, wandb_id=run_id)
 
 
 if __name__ == '__main__':

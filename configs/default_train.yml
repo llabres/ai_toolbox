@@ -17,9 +17,4 @@ only_keep_best: true
 save_dir: save
 project_name: Multi-Page
 
-# Multi-GPU
-num_nodes: 1
-node_id: 0
-num_gpus: 4
-
 

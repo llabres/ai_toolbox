@@ -1,5 +1,7 @@
 data_dir: /data-net/storage/datasets/
 
+mixed_precision: 'bf16'
+
 # Eval
 eval_batch_size: 2
 eval_max_pages: 20

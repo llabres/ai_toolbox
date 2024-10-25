@@ -6,6 +6,7 @@ max_pages: 2
 gradient_accumulation_steps: 10
 n_iterations: 10000
 save_every: 1000
+mixed_precision: 'bf16'
 
 # Optimizer and Scheduler
 lr: 0.0002
@@ -24,9 +25,5 @@ save_dir: save
 project_name: CVPR
 save_answers: false
 
-# Multi-GPU
-num_nodes: 1
-node_id: 0
-num_gpus: 4
 
 
