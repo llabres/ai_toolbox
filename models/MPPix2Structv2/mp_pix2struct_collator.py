@@ -37,7 +37,7 @@ class MPPix2StructCollator:
             for document_idx, document in enumerate(documents):
                 num_pages = len(document) 
                 image_resolution = document[0].size # All pages of a document are assumed to be the same size
-                max_patches = (image_resolution[0]//self.patch_size)*(image_resolution[0]//self.patch_size)
+                max_patches = (image_resolution[0]//self.patch_size)*(image_resolution[1]//self.patch_size)
                 document_patches = self.image_processor(document, return_tensors='pt', max_patches=max_patches)['flattened_patches'] # (num_pages, max_patches, hidden_size + 2)
                 page_idx = torch.arange(1, num_pages + 1).repeat(max_patches, 1).T.unsqueeze(-1) # (num_pages, max_patches, 1)
                 document_idx = torch.full((num_pages, max_patches), document_idx + 1).unsqueeze(-1) # (num_pages, max_patches, 1)
