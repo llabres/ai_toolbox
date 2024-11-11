@@ -1,0 +1,10 @@
+__pycache__/
+mp-*
+*.ipynb
+save/
+debug_runs/
+runs/
+configs/
+run.slurm
+debug_run.slurm
+models/ModelName/
