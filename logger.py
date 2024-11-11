@@ -28,13 +28,14 @@ class Logger:
 
         return False
 
-    def save_answers(self, gt_answers, preds, config):
+    def save_answers(self, questions, gt_answers, preds, config):
         experiment_dir = os.path.join(config['save_dir'], 'checkpoints', config['experiment_name'])
         os.makedirs(experiment_dir, exist_ok=True)
 
         with open(os.path.join(experiment_dir, 'answers.json'), 'a') as f:
             for i in range(len(gt_answers)):
                 data = {
+                    'questions': questions[i],
                     'gt_answers': gt_answers[i],
                     'preds': preds[i],
                 }

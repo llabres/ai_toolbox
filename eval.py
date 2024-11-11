@@ -89,14 +89,53 @@ def evaluate(config, model, eval_data_loader, logger, accelerator):
 
     return logger.update_best(total_metrics)
 
+def evaluate_single_gpu(config, model, eval_data_loader, logger):
+    model.eval()
+    pbar = tqdm(eval_data_loader)
+
+    total_samples = 0
+    metrics = {'Accuracy': [], 'ANLS': []}
+
+    with torch.no_grad():
+        for batch in pbar:
+            bs = batch['labels'].shape[0]
+            batch.pop('labels')
+            batch.pop('decoder_attention_mask')
+            gt_answers = batch.pop('gt_answers')
+            gt_answer_page = batch.pop('gt_answer_page') if 'gt_answer_page' in batch.keys() else None
+            batch = {k: v.to(config['device']) for k, v in batch.items()}
+            outputs = model.generate(**batch, output_scores=True, output_attentions=False, return_dict_in_generate=True, max_new_tokens=20)
+
+            preds = model.tokenizer.batch_decode(outputs['sequences'], skip_special_tokens=True)
+
+            batch_metrics = get_metrics(gt_answers, preds)
+
+            pbar.set_description(" - ".join([f"{k}: {sum(v)/bs:.4f}" for k, v in batch_metrics.items()]))
+
+            for k, v in batch_metrics.items():
+                metrics[k].extend(v)
+
+            total_samples += bs
+
+            if config['save_answers']:
+                questions = model.tokenizer.batch_decode(batch['question_input_ids'], skip_special_tokens=True)
+                logger.save_answers(questions, gt_answers, preds, config)
+
+            if config['debug'] and total_samples >= 10:
+                break
+
+    total_metrics = {k: sum(v)/total_samples for k, v in metrics.items()}
+
+    return logger.update_best(total_metrics)
+
 if __name__ == '__main__':
     args = parse_args()
     config = load_config(args, eval_only=True)
-    
+
     config['max_pages'] = config['eval_max_pages']
 
     model = build_model(config)
-    model.set_pages(config['eval_max_pages'])
+    model.set_eval_mode()
     model.to(config['device'])
 
     logger = build_logger(config)
@@ -106,7 +145,7 @@ if __name__ == '__main__':
 
     eval_data_loader = torch.utils.data.DataLoader(eval_dataset, batch_size=config['eval_batch_size'], collate_fn=model.collator, num_workers=2, pin_memory=True)
 
-    evaluate(config, model, eval_data_loader, logger)
+    evaluate_single_gpu(config, model, eval_data_loader, logger)
 
         
 
